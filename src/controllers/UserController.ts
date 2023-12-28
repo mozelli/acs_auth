@@ -30,7 +30,16 @@ export class UserController {
         }
     }
 
-    async readUser(request: Request, response: Response) {
+    async readUsers(request: Request, response: Response) {
+        try {
+            const users = await prismaClient.user.findMany();
+            return response.status(200).json(users);
+        } catch(error) {
+            return response.status(500).json({message: "Error in UserController / readUsers"});
+        }
+    }
+
+    async readUserById(request: Request, response: Response) {
         const { user_id } = request.params;
 
         try {
