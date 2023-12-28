@@ -1,0 +1,54 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  user_id       String    @id @default(uuid())
+  name          String 
+  birthday      DateTime
+  gender        String
+  email         String    @unique
+  password_hash String
+  created_at    DateTime  @default(now())
+
+  @@map("users")
+  access_token      AccessTokens[]
+  user_Permissions  UserPermissions[]
+}
+
+model AccessTokens {
+  token_id        String  @id @default(uuid())
+  user_id         String
+  user            User    @relation(fields: [user_id], references: [user_id])
+  token_value     String
+  expiration_date DateTime
+
+  @@map("access_tokens")
+}
+
+model Permissions {
+  permission_id   String  @id @default(uuid())
+  name            String
+  description     String
+
+  @@map("permissions")
+  user_permissions  UserPermissions[]
+}
+
+model UserPermissions {
+  user_permission_id  String @id @default(uuid())
+  user_id         String
+  user            User  @relation(fields: [user_id], references: [user_id])
+  permission_id   String
+  permissions     Permissions @relation(fields: [permission_id], references: [permission_id])
+
+  @@map("user_permissions")
+}
