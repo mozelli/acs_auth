@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prismaClient } from "../database/prismaClient";
 import bcrypt from 'bcrypt';
+import { accessToken } from "../functions/tokenGenerate";
 
 export class UserController {
     async createUser(request: Request, response: Response) {
@@ -8,32 +9,57 @@ export class UserController {
         
         const { name, email, birthday, gender, password } = request.body;
 
-        const saltRounds = 10;
-        const salt = bcrypt.genSaltSync(saltRounds);
-
-        const password_hash = bcrypt.hashSync(password, salt);
-
         try {
-            const user = await prismaClient.user.create({
-                data: {
-                    name,
-                    email,
-                    birthday,
-                    gender,
-                    password_hash
+            const user = await prismaClient.user.findUnique({
+                where: {
+                    email
                 }
-            })
-    
-            return response.status(201).json(user);
-        } catch(error) {
-            return response.status(500).json(error);
+            });
+            
+            if(user) {
+                return response.status(400).json({message: "User already exists!"});
+            } else {
+                const saltRounds = 10;
+                const salt = bcrypt.genSaltSync(saltRounds);
+                const password_hash = bcrypt.hashSync(password, salt);
+                
+                const result = await prismaClient.user.create({
+                    data: {
+                        name,
+                        email,
+                        birthday,
+                        gender,
+                        password_hash
+                    }
+                })
+        
+                return response.status(201).json({
+                    user: {
+                        name: result.name,
+                        email: result.email,
+                        birthday: result.birthday,
+                        gender: result.gender
+                    },
+                    token: accessToken(result.user_id)
+                });
+
+            }
+        } catch (error) {
+            return response.status(500).json({error});
         }
     }
 
     async readUsers(request: Request, response: Response) {
         try {
-            const users = await prismaClient.user.findMany();
-            return response.status(200).json(users);
+            const users = await prismaClient.user.findMany({
+                select: {
+                    name: true,
+                    email: true,
+                    birthday: true,
+                    gender: true
+                }
+            });
+            return response.status(200).json({ users, id: request.user_id });
         } catch(error) {
             return response.status(500).json({message: "Error in UserController / readUsers"});
         }
