@@ -2,6 +2,7 @@ import express, {Request, Response} from 'express';
 import { AuthController } from './controllers/AuthController'
 import { UserController } from './controllers/UserController';
 import { AccessTokenController } from './controllers/AccessTokenController';
+import { authMiddleware } from './middlewares/auth';
 
 const authController = new AuthController();
 const userController = new UserController();
@@ -14,6 +15,8 @@ routes.get('/', (req: Request, res: Response) => {
 })
 
 routes.post('/authenticate', authController.authenticate);
+
+routes.use(authMiddleware);
 
 routes.post('/addNewUser', userController.createUser);
 routes.get('/users', userController.readUsers);
